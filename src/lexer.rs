@@ -1,9 +1,9 @@
-use std::error::Error;
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Integer(i64),
+    Float(f64),
     Symbol(String),
     LParen,
     RParen,
@@ -13,6 +13,7 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Token::Integer(n) => write!(f, "{}", n),
+            Token::Float(n) => write!(f, "{}", n),
             Token::Symbol(s) => write!(f, "{}", s),
             Token::LParen => write!(f, "("),
             Token::RParen => write!(f, ")"),
@@ -40,11 +41,14 @@ pub fn tokenize(program: &str) -> Result<Vec<Token>, TokenError> {
             "(" => tokens.push(Token::LParen),
             ")" => tokens.push(Token::RParen),
             _ => {
-                let i = word.parse::<i64>();
-                if let Ok(num) = i {
-                    tokens.push(Token::Integer(num));
-                } else {
-                    tokens.push(Token::Symbol(word.to_string()));
+                if !word.is_empty() {
+                    tokens.push(if let Ok(i) = word.parse::<i64>() {
+                        Token::Integer(i)
+                    } else if let Ok(f) = word.parse::<f64>() {
+                        Token::Float(f)
+                    } else {
+                        Token::Symbol(word.to_string())
+                    })
                 }
             }
         }
@@ -73,13 +77,16 @@ mod tests {
 
     #[test]
     fn test_area_of_a_circle() {
-        let program = "
+        let program = &format!(
+            "
         (
             (define r 10)
-            (define pi 314)
+            (define pi {})
             (* pi (* r r))
         )
-        ";
+        ",
+            std::f64::consts::PI
+        );
 
         let tokens = tokenize(program).unwrap_or_default();
         assert_eq!(
@@ -94,7 +101,7 @@ mod tests {
                 Token::LParen,
                 Token::Symbol("define".to_string()),
                 Token::Symbol("pi".to_string()),
-                Token::Integer(314),
+                Token::Float(std::f64::consts::PI),
                 Token::RParen,
                 Token::LParen,
                 Token::Symbol("*".to_string()),

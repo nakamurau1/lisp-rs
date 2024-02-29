@@ -48,6 +48,7 @@ fn parse_list(tokens: &mut Vec<Token>) -> Result<Object, ParseError> {
         let t = token.unwrap();
         match t {
             Token::Integer(n) => list.push(Object::Integer(n)),
+            Token::Float(n) => list.push(Object::Float(n)),
             Token::Symbol(s) => list.push(Object::Symbol(s)),
             Token::LParen => {
                 tokens.push(Token::LParen);
@@ -82,11 +83,14 @@ mod tests {
 
     #[test]
     fn test_area_of_a_circle() {
-        let program = "(
+        let program = &format!(
+            "(
                          (define r 10)
-                         (define pi 314)
+                         (define pi {})
                          (* pi (* r r))
-                       )";
+                       )",
+            std::f64::consts::PI
+        );
         let list = parse(program).unwrap();
         assert_eq!(
             list,
@@ -99,7 +103,7 @@ mod tests {
                 Object::List(vec![
                     Object::Symbol("define".to_string()),
                     Object::Symbol("pi".to_string()),
-                    Object::Integer(314),
+                    Object::Float(std::f64::consts::PI),
                 ]),
                 Object::List(vec![
                     Object::Symbol("*".to_string()),

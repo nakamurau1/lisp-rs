@@ -9,26 +9,66 @@ fn eval_binary_op(list: &Vec<Object>, env: &mut Rc<RefCell<Env>>) -> Result<Obje
         return Err("Invalid number of arguments for infix operator".to_string());
     }
     let operator = list[0].clone();
-    let left = eval_obj(&list[1].clone(), env)?;
-    let right = eval_obj(&list[2].clone(), env)?;
-    let left_val = match left {
-        Object::Integer(n) => n,
-        _ => return Err(format!("Left operand must be an integer {:?}", left)),
-    };
-    let right_val = match right {
-        Object::Integer(n) => n,
-        _ => return Err(format!("Right operand must be an integer {:?}", right)),
-    };
+    let left = &eval_obj(&list[1].clone(), env)?;
+    let right = &eval_obj(&list[2].clone(), env)?;
     match operator {
         Object::Symbol(s) => match s.as_str() {
-            "+" => Ok(Object::Integer(left_val + right_val)),
-            "-" => Ok(Object::Integer(left_val - right_val)),
-            "*" => Ok(Object::Integer(left_val * right_val)),
-            "/" => Ok(Object::Integer(left_val / right_val)),
-            "<" => Ok(Object::Bool(left_val < right_val)),
-            ">" => Ok(Object::Bool(left_val > right_val)),
-            "=" => Ok(Object::Bool(left_val == right_val)),
-            "!=" => Ok(Object::Bool(left_val != right_val)),
+            "+" => match (left, right) {
+                (Object::Integer(l), Object::Integer(r)) => Ok(Object::Integer(l + r)),
+                (Object::Integer(l), Object::Float(r)) => Ok(Object::Float(*l as f64 + r)),
+                (Object::Float(l), Object::Integer(r)) => Ok(Object::Float(l + *r as f64)),
+                (Object::Float(l), Object::Float(r)) => Ok(Object::Float(l + r)),
+                _ => Err(format!("Invalid types for + operator {} {}", left, right)),
+            },
+            "-" => match (left, right) {
+                (Object::Integer(l), Object::Integer(r)) => Ok(Object::Integer(l - r)),
+                (Object::Integer(l), Object::Float(r)) => Ok(Object::Float(*l as f64 - r)),
+                (Object::Float(l), Object::Integer(r)) => Ok(Object::Float(l - *r as f64)),
+                (Object::Float(l), Object::Float(r)) => Ok(Object::Float(l - r)),
+                _ => Err(format!("Invalid types for - operator {} {}", left, right)),
+            },
+            "*" => match (left, right) {
+                (Object::Integer(l), Object::Integer(r)) => Ok(Object::Integer(l * r)),
+                (Object::Integer(l), Object::Float(r)) => Ok(Object::Float(*l as f64 * r)),
+                (Object::Float(l), Object::Integer(r)) => Ok(Object::Float(l * *r as f64)),
+                (Object::Float(l), Object::Float(r)) => Ok(Object::Float(l * r)),
+                _ => Err(format!("Invalid types for * operator {} {}", left, right)),
+            },
+            "/" => match (left, right) {
+                (Object::Integer(l), Object::Integer(r)) => Ok(Object::Integer(l / r)),
+                (Object::Integer(l), Object::Float(r)) => Ok(Object::Float(*l as f64 / r)),
+                (Object::Float(l), Object::Integer(r)) => Ok(Object::Float(l / *r as f64)),
+                (Object::Float(l), Object::Float(r)) => Ok(Object::Float(l / r)),
+                _ => Err(format!("Invalid types for / operator {} {}", left, right)),
+            },
+            "<" => match (left, right) {
+                (Object::Integer(l), Object::Integer(r)) => Ok(Object::Bool(l < r)),
+                (Object::Integer(l), Object::Float(r)) => Ok(Object::Bool((*l as f64) < *r)),
+                (Object::Float(l), Object::Integer(r)) => Ok(Object::Bool(l < &(*r as f64))),
+                (Object::Float(l), Object::Float(r)) => Ok(Object::Bool(l < r)),
+                _ => Err(format!("Invalid types for < operator {} {}", left, right)),
+            },
+            ">" => match (left, right) {
+                (Object::Integer(l), Object::Integer(r)) => Ok(Object::Bool(l > r)),
+                (Object::Integer(l), Object::Float(r)) => Ok(Object::Bool((*l as f64) > *r)),
+                (Object::Float(l), Object::Integer(r)) => Ok(Object::Bool(l > &(*r as f64))),
+                (Object::Float(l), Object::Float(r)) => Ok(Object::Bool(l > r)),
+                _ => Err(format!("Invalid types for > operator {} {}", left, right)),
+            },
+            "=" => match (left, right) {
+                (Object::Integer(l), Object::Integer(r)) => Ok(Object::Bool(l == r)),
+                (Object::Integer(l), Object::Float(r)) => Ok(Object::Bool((*l as f64) == *r)),
+                (Object::Float(l), Object::Integer(r)) => Ok(Object::Bool(l == &(*r as f64))),
+                (Object::Float(l), Object::Float(r)) => Ok(Object::Bool(l == r)),
+                _ => Err(format!("Invalid types for = operator {} {}", left, right)),
+            },
+            "!=" => match (left, right) {
+                (Object::Integer(l), Object::Integer(r)) => Ok(Object::Bool(l != r)),
+                (Object::Integer(l), Object::Float(r)) => Ok(Object::Bool((*l as f64) != *r)),
+                (Object::Float(l), Object::Integer(r)) => Ok(Object::Bool(l != &(*r as f64))),
+                (Object::Float(l), Object::Float(r)) => Ok(Object::Bool(l != r)),
+                _ => Err(format!("Invalid types for != operator {} {}", left, right)),
+            },
             _ => Err(format!("Invalid infix operator: {}", s)),
         },
         _ => Err("Operator must be a symbol".to_string()),
@@ -152,6 +192,7 @@ fn eval_obj(obj: &Object, env: &mut Rc<RefCell<Env>>) -> Result<Object, String> 
         Object::List(list) => eval_list(list, env),
         Object::Symbol(s) => eval_symbol(s, env),
         Object::Integer(n) => Ok(Object::Integer(*n)),
+        Object::Float(n) => Ok(Object::Float(*n)),
         Object::Lambda(_params, _body) => Ok(Object::Void),
         Object::Bool(_) => Ok(obj.clone()),
         Object::Void => Ok(Object::Void),
@@ -186,10 +227,7 @@ mod tests {
           (* pi (* r r))
         )";
         let result = eval(program, &mut env).unwrap();
-        assert_eq!(
-            result,
-            Object::List(vec![Object::Integer((314 * 10 * 10) as i64)])
-        )
+        assert_eq!(result, Object::List(vec![Object::Integer(314 * 10 * 10)]))
     }
 
     #[test]
@@ -252,5 +290,16 @@ mod tests {
             result,
             Object::List(vec![Object::Integer((314 * 10 * 10) as i64)])
         );
+    }
+
+    // 浮動小数点数の計算
+    #[test]
+    fn test_float() {
+        let mut env = Rc::new(RefCell::new(Env::new()));
+        let program = "(+ 1.0 2.0)";
+        println!("🔥");
+        let result = eval(program, &mut env).unwrap();
+        println!("🔥result {}", result);
+        assert_eq!(result, Object::Float(3.0));
     }
 }
