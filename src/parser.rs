@@ -50,6 +50,7 @@ fn parse_list(tokens: &mut Vec<Token>) -> Result<Object, ParseError> {
             Token::Integer(n) => list.push(Object::Integer(n)),
             Token::Float(n) => list.push(Object::Float(n)),
             Token::Symbol(s) => list.push(Object::Symbol(s)),
+            Token::String(str) => list.push(Object::String(str)),
             Token::LParen => {
                 tokens.push(Token::LParen);
                 let sub_list = parse_list(tokens)?;
@@ -70,7 +71,7 @@ mod tests {
 
     #[test]
     fn test_add() {
-        let list = parse("(+ 1 2").unwrap();
+        let list = parse("(+ 1 2)").unwrap();
         assert_eq!(
             list,
             Object::List(vec![
@@ -88,6 +89,7 @@ mod tests {
                          (define r 10)
                          (define pi {})
                          (* pi (* r r))
+                         (define str \"こんにちは\")
                        )",
             std::f64::consts::PI
         );
@@ -114,6 +116,11 @@ mod tests {
                         Object::Symbol("r".to_string()),
                     ]),
                 ]),
+                Object::List(vec![
+                    Object::Symbol("define".to_string()),
+                    Object::Symbol("str".to_string()),
+                    Object::String("こんにちは".to_string()),
+                ])
             ])
         );
     }

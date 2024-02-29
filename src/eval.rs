@@ -191,6 +191,7 @@ fn eval_obj(obj: &Object, env: &mut Rc<RefCell<Env>>) -> Result<Object, String> 
     match obj {
         Object::List(list) => eval_list(list, env),
         Object::Symbol(s) => eval_symbol(s, env),
+        Object::String(str) => todo!("🔥Object::Stringに対応"),
         Object::Integer(n) => Ok(Object::Integer(*n)),
         Object::Float(n) => Ok(Object::Float(*n)),
         Object::Lambda(_params, _body) => Ok(Object::Void),

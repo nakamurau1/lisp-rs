@@ -7,6 +7,7 @@ pub enum Object {
     Float(f64),
     Bool(bool),
     Symbol(String),
+    String(String),
     Lambda(Vec<String>, Vec<Object>),
     List(Vec<Object>),
 }
@@ -19,6 +20,7 @@ impl fmt::Display for Object {
             Object::Float(n) => write!(f, "{}", n),
             Object::Bool(b) => write!(f, "{}", b),
             Object::Symbol(s) => write!(f, "{}", s),
+            Object::String(str) => write!(f, "{}", str),
             Object::Lambda(params, body) => {
                 write!(f, "Lambda(")?;
                 for param in params {
