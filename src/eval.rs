@@ -18,6 +18,7 @@ fn eval_binary_op(list: &Vec<Object>, env: &mut Rc<RefCell<Env>>) -> Result<Obje
                 (Object::Integer(l), Object::Float(r)) => Ok(Object::Float(*l as f64 + r)),
                 (Object::Float(l), Object::Integer(r)) => Ok(Object::Float(l + *r as f64)),
                 (Object::Float(l), Object::Float(r)) => Ok(Object::Float(l + r)),
+                (Object::String(l), Object::String(r)) => Ok(Object::String(l.to_string() + r)),
                 _ => Err(format!("Invalid types for + operator {} {}", left, right)),
             },
             "-" => match (left, right) {
@@ -191,7 +192,7 @@ fn eval_obj(obj: &Object, env: &mut Rc<RefCell<Env>>) -> Result<Object, String> 
     match obj {
         Object::List(list) => eval_list(list, env),
         Object::Symbol(s) => eval_symbol(s, env),
-        Object::String(str) => todo!("🔥Object::Stringに対応"),
+        Object::String(str) => Ok(Object::String(str.clone())),
         Object::Integer(n) => Ok(Object::Integer(*n)),
         Object::Float(n) => Ok(Object::Float(*n)),
         Object::Lambda(_params, _body) => Ok(Object::Void),
@@ -298,9 +299,20 @@ mod tests {
     fn test_float() {
         let mut env = Rc::new(RefCell::new(Env::new()));
         let program = "(+ 1.0 2.0)";
-        println!("🔥");
         let result = eval(program, &mut env).unwrap();
-        println!("🔥result {}", result);
         assert_eq!(result, Object::Float(3.0));
+    }
+
+    // 文字列の設定
+    #[test]
+    fn test_string() {
+        let mut env = Rc::new(RefCell::new(Env::new()));
+        let program = "(define s \"hello\")";
+        let result = eval(program, &mut env).unwrap();
+        assert_eq!(result, Object::Void);
+
+        let program = "(+ s \" world\")";
+        let result = eval(program, &mut env).unwrap();
+        assert_eq!(result, Object::String("hello world".to_string()));
     }
 }
